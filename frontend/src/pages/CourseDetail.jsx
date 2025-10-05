@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchCourseById, enrollInCourse, getCourseProgress } from "../api"; // make sure getCourseProgress calls GET /api/progress/:courseId
+import { fetchCourseById, enrollInCourse, getCourseProgress } from "../api";
+import { PlayCircle, Award, Loader2, BookOpen } from "lucide-react";
+import Navbar from "../components/Navbar";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -15,22 +17,19 @@ const CourseDetail = () => {
   const [certificateHash, setCertificateHash] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Load course details and enrollment/progress status
   useEffect(() => {
     const loadCourse = async () => {
       try {
         const res = await fetchCourseById(id);
         setCourse(res.data);
 
-        // Fetch progress / enrollment status
         try {
           const progressRes = await getCourseProgress(id);
           setEnrolled(true);
           setProgress(progressRes.data.progress);
           setCertificateIssued(progressRes.data.certificateIssued);
           setCertificateHash(progressRes.data.certificateHash);
-        } catch (err) {
-          // If 404 (not enrolled), ignore
+        } catch {
           setEnrolled(false);
           setProgress(0);
         }
@@ -45,7 +44,6 @@ const CourseDetail = () => {
     loadCourse();
   }, [id]);
 
-  // Handle enrollment
   const handleEnroll = async () => {
     setActionLoading(true);
     try {
@@ -63,22 +61,17 @@ const CourseDetail = () => {
     }
   };
 
-  // Navigate to first incomplete lesson
   const goToFirstLesson = () => {
     if (course?.lessons?.length > 0) {
-      // Find first incomplete lesson
-      const firstIncomplete = course.lessons.find(
-        (lesson) => !lesson._id || !lesson.completed
-      );
-      const lessonId = firstIncomplete?._id || course.lessons[0]._id;
-      navigate(`/lessons/${lessonId}`);
+      const firstLesson = course.lessons[0];
+      navigate(`/lessons/${firstLesson._id}`);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
+        <Loader2 className="animate-spin w-10 h-10 text-indigo-600" />
       </div>
     );
   }
@@ -92,85 +85,94 @@ const CourseDetail = () => {
   if (!course) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 py-12">
-      {/* Course Header */}
-      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar />
+
+      {/* Hero Section */}
+      <div className="relative">
         <img
           src={course.thumbnail || "https://via.placeholder.com/800x300"}
           alt={course.title}
-          className="w-full h-64 object-cover"
+          className="w-full h-72 object-cover brightness-75"
         />
-        <div className="p-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-            {course.title}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">
-            {course.category || "Uncategorized"}
-          </p>
-          <p className="mt-4 text-gray-700 dark:text-gray-200">
-            {course.description}
-          </p>
-
-          {/* Status & Published */}
-          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className={`px-2 py-1 rounded ${
-                  course.status === "approved"
-                    ? "bg-green-200 text-green-700"
-                    : "bg-yellow-200 text-yellow-700"
-                }`}
-              >
-                {course.status}
-              </span>
-            </p>
-            <p className="mt-1">
-              <strong>Published:</strong> {course.published ? "Yes" : "No"}
-            </p>
-            {enrolled && (
-              <p className="mt-1">
-                <strong>Progress:</strong> {progress}%
-              </p>
-            )}
-          </div>
-
-          {/* Enrollment / Certificate */}
-          <div className="mt-6">
-            {!enrolled ? (
-              <button
-                onClick={handleEnroll}
-                disabled={actionLoading}
-                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {actionLoading ? "Enrolling..." : "Enroll in Course"}
-              </button>
-            ) : progress < 100 ? (
-              <button
-                onClick={goToFirstLesson}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Go to Lessons
-              </button>
-            ) : (
-              <div className="text-center mt-2 text-green-700 font-semibold">
-                🎉 Course Completed! Your certificate is ready.{" "}
-                <button
-                  onClick={() => navigate(`/certificate/${id}`)}
-                  className="ml-2 underline text-blue-600"
-                >
-                  View Certificate
-                </button>
-              </div>
-            )}
-          </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/70 to-purple-800/70 flex flex-col justify-center items-center text-white text-center px-6">
+          <h1 className="text-4xl font-bold mb-3">{course.title}</h1>
+          <p className="max-w-2xl text-gray-200">{course.description}</p>
         </div>
       </div>
 
-      {/* Lessons List */}
-      <div className="max-w-4xl mx-auto mt-8">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
-          Lessons
+      {/* Course Info */}
+      <section className="max-w-5xl mx-auto px-6 py-10">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Category:{" "}
+                <span className="text-indigo-600 font-medium">
+                  {course.category || "General"}
+                </span>
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Created by:{" "}
+                <span className="font-medium">
+                  {course.creator?.name || "Unknown"}
+                </span>
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Lessons: {course.lessons?.length || 0}
+              </p>
+            </div>
+
+            {/* Enrollment Buttons */}
+            <div className="mt-4 md:mt-0">
+              {!enrolled ? (
+                <button
+                  onClick={handleEnroll}
+                  disabled={actionLoading}
+                  className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow hover:scale-105 transition-transform disabled:opacity-50"
+                >
+                  {actionLoading ? "Enrolling..." : "Enroll Now"}
+                </button>
+              ) : progress < 100 ? (
+                <button
+                  onClick={goToFirstLesson}
+                  className="px-6 py-2 bg-green-600 text-white font-semibold rounded-xl shadow hover:bg-green-700 transition"
+                >
+                  Continue Learning
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate(`/certificate/${id}`)}
+                  className="px-6 py-2 flex items-center bg-yellow-500 text-white font-semibold rounded-xl shadow hover:bg-yellow-600 transition"
+                >
+                  <Award className="mr-2 w-5 h-5" /> View Certificate
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          {enrolled && (
+            <div className="mt-6">
+              <div className="flex justify-between mb-1 text-sm font-medium text-gray-600 dark:text-gray-300">
+                <span>Progress</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div
+                  className="bg-indigo-600 h-3 rounded-full transition-all"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Lessons Section */}
+      <section className="max-w-5xl mx-auto px-6 pb-20">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center">
+          <BookOpen className="mr-2 text-indigo-600" /> Lessons
         </h2>
 
         {(!course.lessons || course.lessons.length === 0) ? (
@@ -178,21 +180,34 @@ const CourseDetail = () => {
             No lessons available for this course yet.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <div className="space-y-4">
             {course.lessons.map((lesson, idx) => (
-              <li
+              <div
                 key={lesson._id || idx}
-                className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow hover:shadow-md transition flex justify-between items-center"
+                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex justify-between items-center shadow hover:shadow-lg transition-all cursor-pointer"
+                onClick={() => navigate(`/lessons/${lesson._id}`)}
               >
-                <span>
-                  {idx + 1}. {lesson.title}
+                <div className="flex items-center space-x-3">
+                  <PlayCircle className="text-indigo-600 w-6 h-6" />
+                  <div>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">
+                      {idx + 1}. {lesson.title}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {lesson.duration || "Video lesson"}
+                    </p>
+                  </div>
+                </div>
+
+                <span className="text-sm text-indigo-600 font-medium hover:underline">
+                  Watch →
                 </span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 
