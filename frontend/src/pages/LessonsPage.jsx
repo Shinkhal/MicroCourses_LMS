@@ -6,7 +6,7 @@ import Navbar from "../components/Navbar";
 import { Loader2, CheckCircle, PlayCircle } from "lucide-react";
 
 const LessonPage = () => {
-  const { courseId ,lessonId } = useParams();
+  const { id: courseId, lessonId } = useParams();
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState(null);
@@ -31,18 +31,28 @@ const LessonPage = () => {
   }, [lessonId]);
 
   const handleComplete = async () => {
-    setMarking(true);
-    try {
-      await updateLessonProgress(courseId,lessonId);
-      setCompleted(true);
-      alert("Lesson marked as completed!");
-    } catch (err) {
-      console.error(err);
-      alert(err?.response?.data?.error || "Failed to update progress");
-    } finally {
-      setMarking(false);
+  setMarking(true);
+  try {
+    await updateLessonProgress(courseId, lessonId);
+    setCompleted(true);
+    alert("Lesson marked as completed!");
+  } catch (err) {
+    console.error(err);
+
+    // Extract error message
+    let message = "Failed to update progress";
+    if (err.response && err.response.data) {
+      // Your API might return { error: "message" } or { message: "..." }
+      if (err.response.data.error) message = err.response.data.error;
+      else if (err.response.data.message) message = err.response.data.message;
+      else message = JSON.stringify(err.response.data);
     }
-  };
+    alert(message);
+  } finally {
+    setMarking(false);
+  }
+};
+
 
   if (loading) {
     return (
