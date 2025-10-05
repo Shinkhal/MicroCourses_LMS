@@ -11,10 +11,8 @@ const Courses = () => {
     const loadCourses = async () => {
       try {
         const res = await fetchCourses();
-        // Assuming your API returns all courses and includes a "status" field
-        const publishedCourses = res.data.filter(
-          (course) => course.status === "published"
-        );
+        // API returns { items: [...] }
+        const publishedCourses = res.data.items.filter((course) => course.published);
         setCourses(publishedCourses);
       } catch (err) {
         console.error("Error fetching courses:", err);
@@ -81,6 +79,11 @@ const Courses = () => {
                     View Details →
                   </Link>
                 </div>
+
+                {/* Optional: show creator */}
+                <p className="mt-2 text-sm text-gray-400 dark:text-gray-500">
+                  By {course.creator?.name || "Unknown"}
+                </p>
               </div>
             </div>
           ))}

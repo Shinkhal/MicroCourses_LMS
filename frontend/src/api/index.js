@@ -1,5 +1,6 @@
 import axios from "axios";
 
+// Axios instance
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_BASE_URL,
   headers: {
@@ -7,37 +8,56 @@ const API = axios.create({
   },
 });
 
-// ====== AUTH ROUTES ======
-export const loginUser = (data) => API.post("/auth/login", data);
+// Add token automatically if it exists
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+/* =============================
+   AUTH ROUTES
+============================= */
 export const registerUser = (data) => API.post("/auth/register", data);
+export const loginUser = (data) => API.post("/auth/login", data);
+export const getUserProfile = () => API.get("/auth/profile");
 
-// ====== LEARNER ROUTES ======
-export const fetchCourses = () => API.get("/courses");
+/* =============================
+   CREATOR ROUTES
+============================= */
+// Apply to become a creator
+export const applyAsCreator = () => API.post("/creator/apply");
+
+// Create a new course (approved creators only)
+export const createCourse = (data) => API.post("/creator/courses", data);
+
+// Get all creator’s own courses (dashboard)
+export const getCreatorCourses = () => API.get("/creator/dashboard");
+
+// Submit a course for admin review
+export const submitCourseForReview = (courseId) =>
+  API.put(`/creator/courses/${courseId}/submit`);
+
+/* =============================
+   COURSES ROUTES (Public)
+============================= */
+// View all published courses
+export const fetchCourses = (params) => API.get("/courses", { params });
+
+// View a single course by ID
 export const fetchCourseById = (id) => API.get(`/courses/${id}`);
-export const enrollCourse = (courseId, userId) =>
-  API.post(`/courses/${courseId}/enroll`, { userId });
-export const updateProgress = (lessonId, userId, progress) =>
-  API.post(`/lessons/${lessonId}/progress`, { userId, progress });
-export const getCertificate = (courseId, userId) =>
-  API.get(`/courses/${courseId}/certificate/${userId}`);
 
-// ====== CREATOR ROUTES ======
-export const applyAsCreator = (data) => API.post("/creator/apply", data);
-export const createCourse = (data) => API.post("/creator/course", data);
-export const updateCourse = (id, data) => API.put(`/creator/course/${id}`, data);
-export const deleteCourse = (id) => API.delete(`/creator/course/${id}`);
-export const getCreatorCourses = (creatorId) =>
-  API.get(`/creator/${creatorId}/courses`);
 
-// ====== LESSON ROUTES ======
-export const addLesson = (courseId, data) =>
-  API.post(`/creator/course/${courseId}/lesson`, data);
-export const getLessons = (courseId) =>
-  API.get(`/courses/${courseId}/lessons`);
-export const getLessonById = (lessonId) =>
-  API.get(`/lessons/${lessonId}`);
+/* =============================
+   ENROLLMENT / PROGRESS ROUTES
+============================= */
+// Enroll in a course
+export const enrollInCourse = (courseId) => API.post("/course/enroll", { courseId });
 
-// ====== ADMIN ROUTES ======
-export const reviewCourses = () => API.get("/admin/review/courses");
-export const approveCourse = (id) => API.post(`/admin/course/${id}/approve`);
-export const rejectCourse = (id) => API.post(`/admin/course/${id}/reject`);
+// Update progress / mark lesson complete
+export const updateLessonProgress = (courseId, lessonId) =>
+  API.post("/course/progress", { courseId, lessonId });
+
+// Get learner progress for a course
+export const getCourseProgress = (courseId) =>
+  API.get(`/course/progress/${courseId}`);
