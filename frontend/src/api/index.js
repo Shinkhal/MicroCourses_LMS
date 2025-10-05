@@ -2,9 +2,7 @@ import axios from "axios";
 
 const BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
-  "https://microcourses-lms-tq2l.onrender.com"; // fallback if env fails
-
-console.log("✅ Backend Base URL →", BASE_URL);
+  "https://microcourses-lms-tq2l.onrender.com";
 
 const API = axios.create({
   baseURL: BASE_URL,
@@ -50,3 +48,6 @@ export const updateLessonProgress = (courseId, lessonId) =>
   API.post("/course/progress", { courseId, lessonId });
 export const getCourseProgress = (courseId) =>
   API.get(`/course/progress/${courseId}`);
+
+
+export const getLessonById = (lessonId) => API.get(`/lessons/${lessonId}`);

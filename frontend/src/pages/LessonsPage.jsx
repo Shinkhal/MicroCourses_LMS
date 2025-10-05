@@ -1,125 +1,118 @@
+// src/pages/LessonPage.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { fetchCourseById, getCourseProgress, updateLessonProgress } from "../api";
+import { useParams, useNavigate } from "react-router-dom";
+import { getLessonById, updateLessonProgress} from "../api";
+import Navbar from "../components/Navbar";
+import { Loader2, CheckCircle, PlayCircle } from "lucide-react";
 
-const LessonsPage = () => {
-  const { courseId } = useParams();
+const LessonPage = () => {
+  const { courseId ,lessonId } = useParams();
+  const navigate = useNavigate();
 
-  const [course, setCourse] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [completedLessons, setCompletedLessons] = useState([]);
+  const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [completed, setCompleted] = useState(false);
+  const [marking, setMarking] = useState(false);
 
   useEffect(() => {
-    const loadCourse = async () => {
+    const fetchLesson = async () => {
       try {
-        const res = await fetchCourseById(courseId);
-        setCourse(res.data);
-
-        const progressRes = await getCourseProgress(courseId);
-        setProgress(progressRes.data.progress);
-        setCompletedLessons(progressRes.data.completedLessons);
+        const res = await getLessonById(lessonId);
+        setLesson(res.data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load course or progress.");
+        alert("Failed to load lesson");
       } finally {
         setLoading(false);
       }
     };
 
-    loadCourse();
-  }, [courseId]);
+    fetchLesson();
+  }, [lessonId]);
 
-  const handleCompleteLesson = async (lessonId) => {
-    if (completedLessons.includes(lessonId)) return;
-
-    setActionLoading(true);
+  const handleComplete = async () => {
+    setMarking(true);
     try {
-      const res = await updateLessonProgress(courseId, lessonId);
-      setProgress(res.data.progress);
-      setCompletedLessons(res.data.completedLessons);
+      await updateLessonProgress(courseId,lessonId);
+      setCompleted(true);
+      alert("Lesson marked as completed!");
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.error?.message || "Failed to update progress");
+      alert(err?.response?.data?.error || "Failed to update progress");
     } finally {
-      setActionLoading(false);
+      setMarking(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
+        <Loader2 className="animate-spin w-10 h-10 text-indigo-600" />
       </div>
     );
   }
 
-  if (error) {
-    return <div className="text-center text-red-500 mt-10">{error}</div>;
-  }
-
-  if (!course) return null;
+  if (!lesson)
+    return <div className="text-center text-red-500 mt-10">Lesson not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 px-6 py-12">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-          {course.title} - Lessons
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar />
+
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+          <PlayCircle className="mr-2 text-indigo-600" /> {lesson.title}
         </h1>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-6">Progress: {progress}%</p>
+        {/* Video Section */}
+        <div className="rounded-2xl overflow-hidden shadow-lg bg-black">
+          <iframe
+            src={lesson.videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+            title={lesson.title}
+            className="w-full h-96"
+            allowFullScreen
+          ></iframe>
+        </div>
 
-        {(!course.lessons || course.lessons.length === 0) ? (
-          <p className="text-gray-500 dark:text-gray-400">
-            No lessons available for this course yet.
+        {/* Completion Section */}
+        <div className="mt-6 flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Duration: {lesson.duration || "Not specified"}
           </p>
-        ) : (
-          <ul className="space-y-6">
-            {course.lessons.map((lesson, idx) => {
-              const isCompleted = completedLessons.includes(lesson._id);
-              return (
-                <li
-                  key={lesson._id}
-                  className={`p-4 rounded-lg shadow transition ${
-                    isCompleted
-                      ? "bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-200"
-                      : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 hover:shadow-md"
-                  }`}
-                >
-                  <h2 className="font-semibold mb-2">
-                    {idx + 1}. {lesson.title}
-                  </h2>
 
-                  {/* Video Player */}
-                  <div className="mb-2">
-                    <video
-                      src={lesson.videoUrl}
-                      controls
-                      className="w-full rounded-lg"
-                    ></video>
-                  </div>
+          <button
+            onClick={handleComplete}
+            disabled={marking || completed}
+            className={`px-6 py-2 rounded-xl font-semibold text-white shadow ${
+              completed
+                ? "bg-green-600 cursor-default flex items-center gap-2"
+                : "bg-indigo-600 hover:bg-indigo-700 transition"
+            }`}
+          >
+            {completed ? (
+              <>
+                <CheckCircle className="w-5 h-5" /> Completed
+              </>
+            ) : marking ? (
+              "Marking..."
+            ) : (
+              "Mark as Complete"
+            )}
+          </button>
+        </div>
 
-                  {/* Mark Complete */}
-                  {!isCompleted && (
-                    <button
-                      onClick={() => handleCompleteLesson(lesson._id)}
-                      disabled={actionLoading}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                      {actionLoading ? "Marking..." : "Mark Complete"}
-                    </button>
-                  )}
-                  {isCompleted && <span className="font-semibold">✔ Completed</span>}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        {/* Navigation */}
+        <div className="mt-8 text-right">
+          <button
+            onClick={() => navigate(-1)}
+            className="text-indigo-600 font-medium hover:underline"
+          >
+            ← Back to Course
+          </button>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 
-export default LessonsPage;
+export default LessonPage;

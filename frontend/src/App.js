@@ -4,7 +4,7 @@ import Welcome from "./pages/Welcome";
 import AuthPage from "./pages/Auth";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
-import LessonsPage from "./pages/LessonsPage";
+import LessonPage from "./pages/LessonsPage";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
@@ -18,7 +18,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
-            <Route path="/lessons/:lessonId" element={<LessonsPage />} />
+            <Route path="courses/:id/lessons/:lessonId" element={<LessonPage />} />
             <Route path="/profile" element={<Profile/>}/>
           </Routes>
     </Router>

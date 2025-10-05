@@ -64,7 +64,8 @@ const CourseDetail = () => {
   const goToFirstLesson = () => {
     if (course?.lessons?.length > 0) {
       const firstLesson = course.lessons[0];
-      navigate(`/lessons/${firstLesson._id}`);
+      navigate(`/courses/${id}/lessons/${firstLesson._id}`);
+
     }
   };
 
@@ -185,7 +186,7 @@ const CourseDetail = () => {
               <div
                 key={lesson._id || idx}
                 className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex justify-between items-center shadow hover:shadow-lg transition-all cursor-pointer"
-                onClick={() => navigate(`/lessons/${lesson._id}`)}
+                onClick={() => navigate(`/courses/${id}/lessons/${lesson._id}`)}
               >
                 <div className="flex items-center space-x-3">
                   <PlayCircle className="text-indigo-600 w-6 h-6" />
