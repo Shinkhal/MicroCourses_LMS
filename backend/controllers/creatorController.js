@@ -1,5 +1,7 @@
+import crypto from "crypto";
 import Course from "../models/Course.js";
 import User from "../models/User.js";
+import Lesson from "../models/Lesson.js";
 
 /* --------------------------------
    @desc    Apply to become a creator
@@ -40,7 +42,7 @@ export const applyCreator = async (req, res) => {
 };
 
 /* --------------------------------
-   @desc    Create new course
+   @desc    Create new course (with lessons)
    @route   POST /api/creator/courses
    @access  Private (approved creators only)
 -------------------------------- */
@@ -69,20 +71,44 @@ export const createCourse = async (req, res) => {
       });
     }
 
+    // Step 1: Generate a unique serialHash for the course
+    const serialHash = crypto.randomBytes(8).toString("hex");
+
+    // Step 2: Create the course
     const course = await Course.create({
       title,
       description,
-      lessons: lessons || [],
       creator: creator._id,
       status: "pending",
       published: false,
+      serialHash,
     });
 
+    // Step 3: If lessons are provided, create them
+    if (lessons && lessons.length > 0) {
+      const lessonDocs = await Lesson.insertMany(
+        lessons.map((lesson, index) => ({
+          title: lesson.title,
+          videoUrl: lesson.videoUrl,
+          transcript: lesson.transcript || "",
+          order: lesson.order ?? index + 1,
+          course: course._id,
+        }))
+      );
+
+      // Step 4: Link lessons to the course
+      course.lessons = lessonDocs.map((l) => l._id);
+      await course.save();
+    }
+
+    // Step 5: Return the populated course
+    const populatedCourse = await Course.findById(course._id)
+      .populate("lessons")
+      .populate("creator", "name email");
+
     res.status(201).json({
-      id: course._id,
-      title: course.title,
-      status: course.status,
-      published: course.published,
+      message: "Course created successfully",
+      course: populatedCourse,
     });
   } catch (error) {
     res.status(500).json({
@@ -125,7 +151,7 @@ export const submitCourseForReview = async (req, res) => {
       });
     }
 
-    course.status = "under_review"; // if you add this enum later
+    course.status = "under_review"; // optional enum addition later
     await course.save();
 
     res.json({ message: "Course submitted for admin review" });
@@ -143,7 +169,7 @@ export const submitCourseForReview = async (req, res) => {
 -------------------------------- */
 export const getCreatorCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ creator: req.user.id });
+    const courses = await Course.find({ creator: req.user.id }).populate("lessons");
 
     res.json({
       items: courses,
