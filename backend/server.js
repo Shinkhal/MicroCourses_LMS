@@ -14,33 +14,37 @@ connectDB();
 
 const app = express();
 
-// Middleware
 app.use(express.json());
-app.use(cors({
-  origin:'*',
-  credentials:true,
-}));
 
-// app.use(
-//   rateLimit({
-//     windowMs: 60 * 1000,
-//     max: 60,
-//     handler: (req, res) => res.status(429).json({ error: { code: "RATE_LIMIT" } }),
-//   })
-// );
+app.use(
+  cors({
+    origin: [
+      "https://micro-courses-lms-delta.vercel.app",
+    ],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
-// Test Route
+const courseLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60,
+  message: {
+    error: { code: "RATE_LIMIT", message: "Too many requests, please slow down." },
+  },
+});
+
 app.get("/", (req, res) => {
   res.json({ message: "MicroCourses API is running 🚀" });
 });
 
-// Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/creator", creatorRoutes);
-app.use("/api/courses", courseRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/course", enrollmentRoutes);
 
+// Apply limiter only to specific routes
+app.use("/api/creator", courseLimiter, creatorRoutes);
+app.use("/api/courses", courseLimiter, courseRoutes);
+app.use("/api/course", courseLimiter, enrollmentRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
