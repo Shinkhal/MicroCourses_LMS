@@ -20,8 +20,8 @@ app.use(express.json());
 app.use(
   cors({
     origin: [
-      "https://micro-courses-lms-delta.vercel.app/",
-      "http://localhost:3000"
+      "https://micro-courses-lms-delta.vercel.app",
+      "*"
     ],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
