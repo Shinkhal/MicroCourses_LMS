@@ -1,8 +1,11 @@
 import axios from "axios";
 
-// Axios instance
+const BASE_URL =
+  process.env.REACT_APP_API_BASE_URL ||
+  "https://microcourses-lms-tq2l.onrender.com"; // fallback if env fails
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL;
+console.log("✅ Backend Base URL →", BASE_URL);
+
 const API = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -10,7 +13,7 @@ const API = axios.create({
   },
 });
 
-// Add token automatically if it exists
+// Attach JWT token automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -27,39 +30,23 @@ export const getUserProfile = () => API.get("/auth/profile");
 /* =============================
    CREATOR ROUTES
 ============================= */
-// Apply to become a creator
 export const applyAsCreator = () => API.post("/creator/apply");
-
-// Create a new course (approved creators only)
 export const createCourse = (data) => API.post("/creator/courses", data);
-
-// Get all creator’s own courses (dashboard)
 export const getCreatorCourses = () => API.get("/creator/dashboard");
-
-// Submit a course for admin review
 export const submitCourseForReview = (courseId) =>
   API.put(`/creator/courses/${courseId}/submit`);
 
 /* =============================
    COURSES ROUTES (Public)
 ============================= */
-// View all published courses
 export const fetchCourses = (params) => API.get("/courses", { params });
-
-// View a single course by ID
 export const fetchCourseById = (id) => API.get(`/courses/${id}`);
-
 
 /* =============================
    ENROLLMENT / PROGRESS ROUTES
 ============================= */
-// Enroll in a course
 export const enrollInCourse = (courseId) => API.post("/course/enroll", { courseId });
-
-// Update progress / mark lesson complete
 export const updateLessonProgress = (courseId, lessonId) =>
   API.post("/course/progress", { courseId, lessonId });
-
-// Get learner progress for a course
 export const getCourseProgress = (courseId) =>
   API.get(`/course/progress/${courseId}`);
