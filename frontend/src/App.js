@@ -1,5 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import Toastify styles
+
 import Welcome from "./pages/Welcome";
 import AuthPage from "./pages/Auth";
 import Courses from "./pages/Courses";
@@ -8,19 +11,31 @@ import LessonPage from "./pages/LessonsPage";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
-
 function App() {
   return (
     <Router>
-          <Routes>
-            <Route path="/" element={<Welcome />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/courses/:id" element={<CourseDetail />} />
-            <Route path="courses/:id/lessons/:lessonId" element={<LessonPage />} />
-            <Route path="/profile" element={<Profile/>}/>
-          </Routes>
+      {/* All your routes */}
+      <Routes>
+        <Route path="/" element={<Welcome />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<NotFound />} />
+        <Route path="/courses" element={<Courses />} />
+        <Route path="/courses/:id" element={<CourseDetail />} />
+        <Route path="/courses/:id/lessons/:lessonId" element={<LessonPage />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+
+      {/* ✅ Toast Container at Root Level */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored" // Use "dark" or "light" if you prefer
+      />
     </Router>
   );
 }

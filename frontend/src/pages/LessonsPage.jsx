@@ -1,58 +1,71 @@
 // src/pages/LessonPage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getLessonById, updateLessonProgress} from "../api";
+import { getLessonById, updateLessonProgress, fetchCourseById } from "../api";
 import Navbar from "../components/Navbar";
-import { Loader2, CheckCircle, PlayCircle } from "lucide-react";
+import { Loader2, CheckCircle, PlayCircle, ArrowRight } from "lucide-react";
+import { toast } from "react-toastify";
 
 const LessonPage = () => {
   const { id: courseId, lessonId } = useParams();
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState(null);
+  const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
   const [marking, setMarking] = useState(false);
 
   useEffect(() => {
-    const fetchLesson = async () => {
+    const fetchLessonData = async () => {
       try {
+        // fetch current lesson
         const res = await getLessonById(lessonId);
         setLesson(res.data);
+
+        // fetch all lessons in course for next button
+        const courseRes = await fetchCourseById(courseId);
+        setLessons(courseRes.data.lessons || []);
       } catch (err) {
         console.error(err);
-        alert("Failed to load lesson");
+        toast.error("Failed to load lesson.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLesson();
-  }, [lessonId]);
+    fetchLessonData();
+  }, [lessonId, courseId]);
 
   const handleComplete = async () => {
-  setMarking(true);
-  try {
-    await updateLessonProgress(courseId, lessonId);
-    setCompleted(true);
-    alert("Lesson marked as completed!");
-  } catch (err) {
-    console.error(err);
-
-    // Extract error message
-    let message = "Failed to update progress";
-    if (err.response && err.response.data) {
-      // Your API might return { error: "message" } or { message: "..." }
-      if (err.response.data.error) message = err.response.data.error;
-      else if (err.response.data.message) message = err.response.data.message;
-      else message = JSON.stringify(err.response.data);
+    setMarking(true);
+    try {
+      await updateLessonProgress(courseId, lessonId);
+      setCompleted(true);
+      toast.success("✅ Lesson marked as completed!");
+    } catch (err) {
+      console.error(err);
+      const message =
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        "Failed to update progress";
+      toast.error(message);
+    } finally {
+      setMarking(false);
     }
-    alert(message);
-  } finally {
-    setMarking(false);
-  }
-};
+  };
 
+  const goToNextLesson = () => {
+    if (!lesson || lessons.length === 0) return;
+    const currentIndex = lessons.findIndex((l) => l._id === lessonId);
+    const nextLesson = lessons[currentIndex + 1];
+    if (nextLesson) {
+      navigate(`/courses/${courseId}/lessons/${nextLesson._id}`);
+      window.scrollTo(0, 0);
+    } else {
+      toast.info("🎉 You’ve completed all lessons in this course!");
+    }
+  };
 
   if (loading) {
     return (
@@ -85,30 +98,41 @@ const LessonPage = () => {
         </div>
 
         {/* Completion Section */}
-        <div className="mt-6 flex justify-between items-center">
+        <div className="mt-6 flex flex-wrap gap-3 justify-between items-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Duration: {lesson.duration || "Not specified"}
           </p>
 
-          <button
-            onClick={handleComplete}
-            disabled={marking || completed}
-            className={`px-6 py-2 rounded-xl font-semibold text-white shadow ${
-              completed
-                ? "bg-green-600 cursor-default flex items-center gap-2"
-                : "bg-indigo-600 hover:bg-indigo-700 transition"
-            }`}
-          >
-            {completed ? (
-              <>
-                <CheckCircle className="w-5 h-5" /> Completed
-              </>
-            ) : marking ? (
-              "Marking..."
-            ) : (
-              "Mark as Complete"
+          <div className="flex gap-3">
+            <button
+              onClick={handleComplete}
+              disabled={marking || completed}
+              className={`px-6 py-2 rounded-xl font-semibold text-white shadow ${
+                completed
+                  ? "bg-green-600 cursor-default flex items-center gap-2"
+                  : "bg-indigo-600 hover:bg-indigo-700 transition"
+              }`}
+            >
+              {completed ? (
+                <>
+                  <CheckCircle className="w-5 h-5" /> Completed
+                </>
+              ) : marking ? (
+                "Marking..."
+              ) : (
+                "Mark as Complete"
+              )}
+            </button>
+
+            {completed && (
+              <button
+                onClick={goToNextLesson}
+                className="px-6 py-2 bg-purple-600 text-white font-semibold rounded-xl shadow hover:bg-purple-700 transition flex items-center gap-2"
+              >
+                Next Lesson <ArrowRight className="w-5 h-5" />
+              </button>
             )}
-          </button>
+          </div>
         </div>
 
         {/* Navigation */}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { fetchCourseById, enrollInCourse, getCourseProgress } from "../api";
 import { PlayCircle, Award, Loader2, BookOpen } from "lucide-react";
 import Navbar from "../components/Navbar";
+import { toast } from "react-toastify";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -13,8 +14,11 @@ const CourseDetail = () => {
   const [error, setError] = useState("");
   const [enrolled, setEnrolled] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [certificateIssued, setCertificateIssued] = useState(false);
-  const [certificateHash, setCertificateHash] = useState(null);
+  const [progressData, setProgressData] = useState({
+    completedLessons: [],
+    certificateIssued: false,
+    certificateHash: null,
+  });
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -27,9 +31,13 @@ const CourseDetail = () => {
           const progressRes = await getCourseProgress(id);
           setEnrolled(true);
           setProgress(progressRes.data.progress);
-          setCertificateIssued(progressRes.data.certificateIssued);
-          setCertificateHash(progressRes.data.certificateHash);
+          setProgressData({
+            completedLessons: progressRes.data.completedLessons || [],
+            certificateIssued: progressRes.data.certificateIssued || false,
+            certificateHash: progressRes.data.certificateHash || null,
+          });
         } catch {
+          // User not enrolled yet
           setEnrolled(false);
           setProgress(0);
         }
@@ -51,21 +59,35 @@ const CourseDetail = () => {
       const progressRes = await getCourseProgress(id);
       setEnrolled(true);
       setProgress(progressRes.data.progress);
-      setCertificateIssued(progressRes.data.certificateIssued);
-      setCertificateHash(progressRes.data.certificateHash);
+      setProgressData({
+        completedLessons: progressRes.data.completedLessons || [],
+        certificateIssued: progressRes.data.certificateIssued || false,
+        certificateHash: progressRes.data.certificateHash || null,
+      });
+      toast.success("Enrollment successful!");
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.error?.message || "Enrollment failed");
+      toast.error(err?.response?.data?.error?.message || "Enrollment failed");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const goToFirstLesson = () => {
-    if (course?.lessons?.length > 0) {
-      const firstLesson = course.lessons[0];
-      navigate(`/courses/${id}/lessons/${firstLesson._id}`);
+  const goToNextLesson = () => {
+    if (!course?.lessons?.length) return;
 
+    // Find the first lesson not completed
+    const nextLesson = course.lessons.find(
+      (lesson) =>
+        !progressData.completedLessons?.includes(lesson._id)
+    );
+
+    if (!nextLesson) {
+      // All lessons completed → go to certificate page
+      navigate(`/certificate/${id}`);
+      toast.info("You've completed all lessons! 🎉");
+    } else {
+      navigate(`/courses/${id}/lessons/${nextLesson._id}`);
     }
   };
 
@@ -136,7 +158,7 @@ const CourseDetail = () => {
                 </button>
               ) : progress < 100 ? (
                 <button
-                  onClick={goToFirstLesson}
+                  onClick={goToNextLesson}
                   className="px-6 py-2 bg-green-600 text-white font-semibold rounded-xl shadow hover:bg-green-700 transition"
                 >
                   Continue Learning
@@ -185,8 +207,14 @@ const CourseDetail = () => {
             {course.lessons.map((lesson, idx) => (
               <div
                 key={lesson._id || idx}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex justify-between items-center shadow hover:shadow-lg transition-all cursor-pointer"
-                onClick={() => navigate(`/courses/${id}/lessons/${lesson._id}`)}
+                className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex justify-between items-center shadow hover:shadow-lg transition-all cursor-pointer ${
+                  progressData.completedLessons?.includes(lesson._id)
+                    ? "opacity-60"
+                    : ""
+                }`}
+                onClick={() =>
+                  navigate(`/courses/${id}/lessons/${lesson._id}`)
+                }
               >
                 <div className="flex items-center space-x-3">
                   <PlayCircle className="text-indigo-600 w-6 h-6" />
@@ -201,7 +229,9 @@ const CourseDetail = () => {
                 </div>
 
                 <span className="text-sm text-indigo-600 font-medium hover:underline">
-                  Watch →
+                  {progressData.completedLessons?.includes(lesson._id)
+                    ? "Completed ✓"
+                    : "Watch →"}
                 </span>
               </div>
             ))}
