@@ -31,6 +31,9 @@ export const getUserProfile = () => API.get("/auth/profile");
 export const applyAsCreator = () => API.post("/creator/apply");
 export const createCourse = (data) => API.post("/creator/courses", data);
 export const getCreatorCourses = () => API.get("/creator/dashboard");
+export const getCourseById = (id) => API.get(`/courses/${id}`);
+export const updateCourse = (id, data) => API.put(`/courses/${id}`, data);
+
 export const submitCourseForReview = (courseId) =>
   API.put(`/creator/courses/${courseId}/submit`);
 
@@ -43,11 +46,28 @@ export const fetchCourseById = (id) => API.get(`/courses/${id}`);
 /* =============================
    ENROLLMENT / PROGRESS ROUTES
 ============================= */
-export const enrollInCourse = (courseId) => API.post("/course/enroll", { courseId });
+export const enrollInCourse = (courseId) =>
+  API.post("/course/enroll", { courseId });
+
 export const updateLessonProgress = (courseId, lessonId) =>
   API.post("/course/progress", { courseId, lessonId });
+
 export const getCourseProgress = (courseId) =>
   API.get(`/course/progress/${courseId}`);
 
-
 export const getLessonById = (lessonId) => API.get(`/lessons/${lessonId}`);
+
+/* =============================
+   ADMIN ROUTES
+============================= */
+export const getPendingCreators = () =>
+  API.get("/admin/creators/pending");
+
+export const updateCreatorStatus = (id, status) =>
+  API.put(`/admin/creators/${id}/status`, { status });
+
+export const getPendingCourses = () =>
+  API.get("/admin/courses/pending");
+
+export const updateCourseStatus = (id, status) =>
+  API.put(`/admin/courses/${id}/status`, { status });

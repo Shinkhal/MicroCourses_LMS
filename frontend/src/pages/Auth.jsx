@@ -1,6 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, registerUser } from "../api";
+import { toast } from "react-toastify";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -11,13 +12,9 @@ export default function Auth() {
     password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
-    setError("");
-    setSuccess("");
     setFormData({ name: "", email: "", password: "" });
   };
 
@@ -26,8 +23,6 @@ export default function Auth() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
     setLoading(true);
     try {
       if (isLogin) {
@@ -36,34 +31,38 @@ export default function Auth() {
           password: formData.password,
         });
         localStorage.setItem("token", res.data.token);
-        setSuccess("Login successful! Redirecting...");
-        setTimeout(() => navigate("/courses"), 1000);
+        toast.success("🎉 Login successful! Redirecting...");
+        setTimeout(() => navigate("/courses"), 1500);
       } else {
         await registerUser(formData);
-        setSuccess("Registration successful! You can now log in.");
+        toast.success("✅ Registration successful! You can now log in.");
         setIsLogin(true);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-600 to-purple-700">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-indigo-600 mb-2">
-          MicroCourses 🎓
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-700 via-purple-700 to-pink-600 relative overflow-hidden">
+      {/* Decorative Background Circles */}
+      <div className="absolute w-72 h-72 bg-indigo-400 opacity-30 rounded-full blur-3xl top-10 left-10 animate-pulse"></div>
+      <div className="absolute w-96 h-96 bg-pink-400 opacity-20 rounded-full blur-3xl bottom-10 right-10 animate-pulse"></div>
+
+      <div className="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-10 w-full max-w-md text-white">
+        <h2 className="text-4xl font-bold text-center mb-2">
+          Micro<span className="text-yellow-300">Courses</span> 🎓
         </h2>
-        <p className="text-center text-gray-500 mb-6">
-          {isLogin ? "Welcome back!" : "Create your account"}
+        <p className="text-center text-gray-200 mb-6 text-sm">
+          {isLogin ? "Welcome back to your learning journey!" : "Start your learning adventure today!"}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-200 mb-1">
                 Full Name
               </label>
               <input
@@ -72,14 +71,14 @@ export default function Auth() {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full p-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 required={!isLogin}
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-200 mb-1">
               Email
             </label>
             <input
@@ -88,13 +87,13 @@ export default function Auth() {
               placeholder="Enter your email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full p-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-200 mb-1">
               Password
             </label>
             <input
@@ -103,18 +102,15 @@ export default function Auth() {
               placeholder="Enter your password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full p-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
               required
             />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {success && <p className="text-green-600 text-sm">{success}</p>}
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition font-medium"
+            className="w-full py-3 bg-yellow-400 text-indigo-900 font-semibold rounded-lg hover:bg-yellow-300 transition transform hover:scale-[1.02] shadow-md"
           >
             {loading
               ? isLogin
@@ -127,16 +123,14 @@ export default function Auth() {
         </form>
 
         {/* Toggle */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
-            <button
-              onClick={toggleMode}
-              className="text-indigo-600 font-semibold hover:underline focus:outline-none"
-            >
-              {isLogin ? "Register" : "Login"}
-            </button>
-          </p>
+        <div className="mt-6 text-center text-gray-300 text-sm">
+          {isLogin ? "Don’t have an account?" : "Already have an account?"}{" "}
+          <button
+            onClick={toggleMode}
+            className="text-yellow-300 font-semibold hover:underline focus:outline-none"
+          >
+            {isLogin ? "Register" : "Login"}
+          </button>
         </div>
       </div>
     </div>

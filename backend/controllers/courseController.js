@@ -1,5 +1,6 @@
 import Course from "../models/Course.js";
 import User from "../models/User.js";
+import Lesson from "../models/Lesson.js";
 import crypto from "crypto";
 
 /* --------------------------------
@@ -80,13 +81,41 @@ export const updateCourse = async (req, res) => {
       });
     }
 
+    // Update basic fields
     if (title) course.title = title;
     if (description) course.description = description;
-    if (lessons) course.lessons = lessons;
+
+    // Handle lessons
+    if (lessons && Array.isArray(lessons)) {
+      // Optional: remove old lessons to avoid duplicates
+      await Lesson.deleteMany({ _id: { $in: course.lessons } });
+
+      // Create new lessons
+      const lessonDocs = await Lesson.insertMany(
+        lessons.map((lesson, index) => ({
+          title: lesson.title,
+          videoUrl: lesson.videoUrl,
+          transcript: lesson.transcript || "",
+          order: lesson.order ?? index + 1,
+          course: course._id,
+        }))
+      );
+
+      // Link lessons to the course
+      course.lessons = lessonDocs.map(l => l._id);
+    }
 
     await course.save();
 
-    res.json({ message: "Course updated successfully", course });
+    // Populate for response
+    const populatedCourse = await Course.findById(course._id)
+      .populate("lessons")
+      .populate("creator", "name email");
+
+    res.json({
+      message: "Course updated successfully",
+      course: populatedCourse,
+    });
   } catch (error) {
     res.status(500).json({
       error: { code: "SERVER_ERROR", field: null, message: error.message },
