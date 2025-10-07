@@ -1,9 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-// Simple in-memory cache for Idempotency keys (works fine for hackathon)
-const idempotencyCache = new Map();
-
 /* --------------------------------
    Helper: Generate JWT Token
 -------------------------------- */
@@ -62,8 +59,6 @@ export const registerUser = async (req, res) => {
       creatorStatus: user.creatorStatus,
       token: generateToken(user._id, user.role),
     };
-
-    idempotencyCache.set(key, responseData);
     res.status(201).json(responseData);
   } catch (error) {
     res.status(500).json({
