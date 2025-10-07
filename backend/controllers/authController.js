@@ -20,21 +20,6 @@ const generateToken = (id, role) => {
 -------------------------------- */
 export const registerUser = async (req, res) => {
   try {
-    const key = req.headers["idempotency-key"];
-    if (!key) {
-      return res.status(400).json({
-        error: {
-          code: "IDEMPOTENCY_KEY_REQUIRED",
-          field: "headers.idempotency-key",
-          message: "Missing Idempotency-Key header",
-        },
-      });
-    }
-
-    // Prevent duplicate execution if same key is reused
-    if (idempotencyCache.has(key)) {
-      return res.json(idempotencyCache.get(key));
-    }
 
     const { name, email, password, role } = req.body;
 
